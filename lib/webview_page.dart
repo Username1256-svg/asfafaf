@@ -11,6 +11,7 @@ class WebViewPage extends StatefulWidget {
 
 class _WebViewPageState extends State<WebViewPage> {
   late final WebViewController _controller;
+  String _errors = ''; // Строка для отображения ошибок
 
   @override
   void initState() {
@@ -26,37 +27,33 @@ class _WebViewPageState extends State<WebViewPage> {
       ..loadFlutterAsset('assets/index.html');
   }
 
+  // Метод для обработки сообщений от JavaScript
   void _handleJSMessage(String message) {
-    if (message == 'showAd') {
-      _showAd(); // Реализация показа рекламы
-    } else if (message == 'shareApp') {
-      _shareApp();
-    } else if (message.startsWith('setOrientation:')) {
-      _setOrientation(message.split(':')[1]);
-    }
-  }
-
-  void _showAd() {
-    // Реализация показа рекламы
-  }
-
-  void _shareApp() {
-    // Шеринг через Flutter package (например, `share_plus`)
-  }
-
-  void _setOrientation(String orientation) {
-    if (orientation == 'portrait') {
-      SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
-    } else if (orientation == 'landscape') {
-      SystemChrome.setPreferredOrientations([DeviceOrientation.landscapeLeft, DeviceOrientation.landscapeRight]);
-    }
+    setState(() {
+      _errors = message; // Отображаем ошибки на экране
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('WebView Page')),
-      body: WebViewWidget(controller: _controller),
+      body: Column(
+        children: [
+          Expanded(
+            child: WebViewWidget(controller: _controller),
+          ),
+          if (_errors.isNotEmpty)
+            Container(
+              padding: const EdgeInsets.all(8),
+              color: Colors.red[100],
+              child: Text(
+                'JavaScript Error: $_errors',
+                style: TextStyle(color: Colors.red),
+              ),
+            ),
+        ],
+      ),
     );
   }
 }
