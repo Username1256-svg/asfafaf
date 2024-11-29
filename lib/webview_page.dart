@@ -23,7 +23,7 @@ class _WebViewPageState extends State<WebViewPage> {
           _handleJSMessage(message.message);
         },
       )
-      ..loadFlutterAsset('assets/js/index.html');
+      ..loadFlutterAsset('assets/index.html');
   }
 
   void _handleJSMessage(String message) {
