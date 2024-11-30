@@ -1,6 +1,6 @@
 import 'dart:io';
-
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
 class WebViewPage extends StatefulWidget {
@@ -25,12 +25,12 @@ class _WebViewPageState extends State<WebViewPage> {
         onMessageReceived: (message) {
           _handleJSMessage(message.message);
         },
-      )
-      ..loadRequest(
-        Uri.parse('http://localhost:8080/assets/index.html'), // Используем локальный сервер
       );
 
-    _startLocalServer();
+    _startLocalServer().then((_) {
+      // После запуска сервера загружаем страницу
+      _controller.loadRequest(Uri.parse('http://localhost:8080/assets/index.html'));
+    });
   }
 
   // Метод для обработки сообщений от JavaScript
@@ -42,20 +42,28 @@ class _WebViewPageState extends State<WebViewPage> {
 
   // Старт локального HTTP-сервера
   Future<void> _startLocalServer() async {
-
     final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 8080);
     server.listen((HttpRequest request) async {
-      final filePath = 'assets/index.html'; // Путь к вашему файлу
-      final file = File(filePath);
-
-      if (await file.exists()) {
-        request.response.headers.contentType = ContentType.html;
-        await request.response.addStream(file.openRead());
+      if (request.uri.path == '/assets/index.html') {
+        await serveFile(request, 'assets/index.html');
       } else {
         request.response.statusCode = HttpStatus.notFound;
+        await request.response.close();
       }
-      await request.response.close();
     });
+  }
+
+  // Метод для чтения файла из assets
+  Future<void> serveFile(HttpRequest request, String filePath) async {
+    try {
+      final data = await rootBundle.loadString(filePath);
+      request.response.headers.contentType = ContentType.html;
+      request.response.write(data);
+    } catch (e) {
+      request.response.statusCode = HttpStatus.notFound;
+    } finally {
+      await request.response.close();
+    }
   }
 
   @override
